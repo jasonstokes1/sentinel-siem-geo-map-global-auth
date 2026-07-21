@@ -54,6 +54,8 @@ DeviceLogonEvents
 
 > Geo data (MaxMind GeoLite2) is approximate — read the map as regions, not pinpoints.
 
+![Inbound Authentication Origins map](./Inbound%20Authentication%20Origins.png)
+
 ## How to Use
 
 1. Open **Microsoft Sentinel** → **Workbooks** → **Add workbook** → **Advanced Editor** (`</>` icon).
