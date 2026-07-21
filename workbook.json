@@ -1,0 +1,125 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# 🌍 Inbound Authentication Origins\n\nMaps the external source IP (`RemoteIP`) of remote logons from `DeviceLogonEvents`. Bubble size = attempts, color (red→green) = successful logons. The bubble to fear is a `LogonSuccess` from a country you don't operate in.\n\n> Enriched with the native `geo_info_from_ip_address()` function. Geo data (MaxMind GeoLite2) is approximate — read as regions, not pinpoints."
+      },
+      "name": "header",
+      "id": "a1d030de-8ea6-4787-8615-8e3d353c8065"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "tr",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ]
+            }
+          }
+        ],
+        "style": "pills"
+      },
+      "name": "parameters",
+      "id": "bc1d9fdc-08bc-43b5-98a9-9b3fc0061aeb"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## 1️⃣ Inbound Authentication Origins — `DeviceLogonEvents`\n\nMaps the external source IP (`RemoteIP`) of remote logons. Bubble **size** = number of attempts; color (red→green) = successful logons. **The bubble to fear is a `LogonSuccess` from a country you don't operate in.**"
+      },
+      "name": "text-logon",
+      "id": "d3554ef8-a67a-4303-b4a7-d11a05054184"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// === Inbound auth origins (geo) ===\n// Goal: plot WHERE remote logons originate, and whether they succeeded.\nDeviceLogonEvents\n| where Timestamp {TimeRange}\n// Only logons that came over the network from a real external address.\n// RemoteIPType filters out the huge volume of private/internal logons,\n// which would otherwise return empty coordinates and clutter the map.\n| where RemoteIPType == \"Public\"\n| where isnotempty(RemoteIP)\n// We care about network + remote-interactive (RDP) logons reaching in.\n| where LogonType in (\"Network\", \"RemoteInteractive\")\n// Enrich the source IP with geolocation (country/city/lat/long).\n| extend geo = geo_info_from_ip_address(RemoteIP)\n| extend Latitude  = toreal(geo.latitude),\n         Longitude = toreal(geo.longitude),\n         Country   = tostring(geo.country),\n         City      = tostring(geo.city)\n// Drop rows the geo DB couldn't resolve (no coordinates = nothing to plot).\n| where isnotempty(Latitude) and isnotempty(Longitude)\n// Aggregate per source location so the map plots one bubble per origin.\n// Successes vs failures are counted separately to expose the dangerous mix.\n| summarize Attempts        = count(),\n            Successes       = countif(ActionType == \"LogonSuccess\"),\n            Failures        = countif(ActionType == \"LogonFailed\"),\n            TargetedDevices = dcount(DeviceName),\n            Accounts        = make_set(AccountName, 25)\n         by RemoteIP, Country, City, Latitude, Longitude\n// Label shown on the bubble: IP + country, plus how many succeeded.\n| extend MapLabel = strcat(RemoteIP, \" (\", Country, \") — \", Successes, \" success / \", Attempts, \" total\")\n| project Latitude, Longitude, MapLabel, Attempts, Successes, Failures, TargetedDevices, RemoteIP, Country, City, Accounts\n| order by Successes desc, Attempts desc",
+        "size": 0,
+        "title": "Inbound auth origins — bubble size = total attempts",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "map",
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "sizeSettings": "Attempts",
+          "sizeAggregation": "Sum",
+          "labelSettings": "MapLabel",
+          "legendMetric": "Successes",
+          "legendAggregation": "Sum",
+          "legendColor": "Successes",
+          "itemColorSettings": {
+            "nodeColorField": "Attempts",
+            "colorAggregation": "Sum",
+            "type": "heatmap",
+            "heatmapPalette": "greenRed"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/3c95e63a-895a-4386-991e-edbbf57de5c8/resourceGroups/cyber-range-admin-soc/providers/Microsoft.OperationalInsights/workspaces/LAW-Cyber-Range"
+        ]
+      },
+      "name": "map-logon",
+      "id": "ad712db7-5cbe-4264-a6c4-9879016cce69"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// Companion grid: same data, ranked, with the accounts touched per source.\nDeviceLogonEvents\n| where Timestamp {TimeRange}\n| where RemoteIPType == \"Public\" and isnotempty(RemoteIP)\n| where LogonType in (\"Network\", \"RemoteInteractive\")\n| extend geo = geo_info_from_ip_address(RemoteIP)\n| summarize Attempts  = count(),\n            Successes = countif(ActionType == \"LogonSuccess\"),\n            Failures  = countif(ActionType == \"LogonFailed\"),\n            Devices   = dcount(DeviceName),\n            Accounts  = make_set(AccountName, 25)\n         by RemoteIP,\n            Country = tostring(geo.country),\n            City    = tostring(geo.city)\n| order by Successes desc, Attempts desc",
+        "size": 0,
+        "title": "Source IP breakdown (success vs. fail)",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "crossComponentResources": [
+          "/subscriptions/3c95e63a-895a-4386-991e-edbbf57de5c8/resourceGroups/cyber-range-admin-soc/providers/Microsoft.OperationalInsights/workspaces/LAW-Cyber-Range"
+        ]
+      },
+      "name": "grid-logon",
+      "id": "4d7de9f8-c76e-4a4a-b380-8ce2c8a389cc"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/3c95e63a-895a-4386-991e-edbbf57de5c8/resourcegroups/cyber-range-admin-soc/providers/microsoft.operationalinsights/workspaces/law-cyber-range"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+  "context": {
+    "ownerId": "/subscriptions/3c95e63a-895a-4386-991e-edbbf57de5c8/resourceGroups/cyber-range-admin-soc/providers/Microsoft.OperationalInsights/workspaces/LAW-Cyber-Range"
+  }
+}
