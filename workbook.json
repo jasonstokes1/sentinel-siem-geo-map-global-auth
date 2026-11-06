@@ -4,7 +4,7 @@
     {
       "type": 1,
       "content": {
-        "json": "# 🌍 Inbound Authentication Origins\n\nMaps the external source IP (`RemoteIP`) of remote logons from `DeviceLogonEvents`. Bubble size = attempts, color (red→green) = successful logons. The bubble to fear is a `LogonSuccess` from a country you don't operate in.\n\n> Enriched with the native `geo_info_from_ip_address()` function. Geo data (MaxMind GeoLite2) is approximate — read as regions, not pinpoints."
+        "json": "# Inbound Authentication Origins\n\nMaps the external source IP (`RemoteIP`) of remote logons from `DeviceLogonEvents`. Bubble size = attempts, color (red→green) = successful logons. The bubble to fear is a `LogonSuccess` from a country you don't operate in.\n\n> Enriched with the native `geo_info_from_ip_address()` function. Geo data (MaxMind GeoLite2) is approximate — read as regions, not pinpoints."
       },
       "name": "header",
       "id": "a1d030de-8ea6-4787-8615-8e3d353c8065"
@@ -56,7 +56,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## 1️⃣ Inbound Authentication Origins — `DeviceLogonEvents`\n\nMaps the external source IP (`RemoteIP`) of remote logons. Bubble **size** = number of attempts; color (red→green) = successful logons. **The bubble to fear is a `LogonSuccess` from a country you don't operate in.**"
+        "json": "## 1. Inbound Authentication Origins — `DeviceLogonEvents`\n\nMaps the external source IP (`RemoteIP`) of remote logons. Bubble **size** = number of attempts; color (red→green) = successful logons. **The bubble to fear is a `LogonSuccess` from a country you don't operate in.**"
       },
       "name": "text-logon",
       "id": "d3554ef8-a67a-4303-b4a7-d11a05054184"

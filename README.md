@@ -1,4 +1,4 @@
-# 🌍 Microsoft Sentinel SIEM — Geo Map 1: Global Auth
+# Microsoft Sentinel SIEM — Geo Map 1: Global Auth
 
 Part of a broader **Microsoft Sentinel SIEM** portfolio series. This workbook visualizes the geographic origin of remote logon attempts, surfacing the classic SOC red flag: a successful login from a country the organization doesn't operate in.
 
